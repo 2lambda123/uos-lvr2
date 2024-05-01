@@ -7,88 +7,83 @@
 #include <boost/optional.hpp>
 
 #include <yaml-cpp/yaml.h>
-namespace lvr2
-{
+namespace lvr2 {
 
 using StringOptional = boost::optional<std::string>;
 using NodeOptional = boost::optional<YAML::Node>;
 
-struct Description
-{
-    StringOptional groupName;
-    StringOptional dataSetName;
-    StringOptional metaName;
-    NodeOptional metaData;
+struct Description {
+  StringOptional groupName;
+  StringOptional dataSetName;
+  StringOptional metaName;
+  NodeOptional metaData;
 };
 
-std::pair<std::string, std::string> getNames(
-    const std::string& defaultGroup,
-    const std::string& defaultContainer,
-    const Description& d);
+std::pair<std::string, std::string>
+getNames(const std::string &defaultGroup, const std::string &defaultContainer,
+         const Description &d);
 
-class ScanProjectSchema
-{
+class ScanProjectSchema {
 public:
-    ScanProjectSchema() {}
+  ScanProjectSchema() {}
 
-    ~ScanProjectSchema() = default;
+  ~ScanProjectSchema() = default;
 
-    virtual Description scanProject() const = 0;
-    virtual Description position(const size_t& scanPosNo) const = 0;
-    virtual Description scan(const size_t& scanPosNo, const size_t& scanNo) const = 0;
-    virtual Description scan(const std::string& scanPositionPath, const size_t& scanNo) const = 0;
+  virtual Description scanProject() const = 0;
+  virtual Description position(const size_t &scanPosNo) const = 0;
+  virtual Description scan(const size_t &scanPosNo,
+                           const size_t &scanNo) const = 0;
+  virtual Description scan(const std::string &scanPositionPath,
+                           const size_t &scanNo) const = 0;
 
-    virtual Description scanCamera(const size_t& scanPositionNo, const size_t& camNo) const = 0;
-    virtual Description scanCamera(const std::string& scanPositionPath, const size_t& camNo) const = 0;
+  virtual Description scanCamera(const size_t &scanPositionNo,
+                                 const size_t &camNo) const = 0;
+  virtual Description scanCamera(const std::string &scanPositionPath,
+                                 const size_t &camNo) const = 0;
 
-    virtual Description scanImage(
-        const size_t& scanPosNo, const size_t& scanNo,
-        const size_t& scanCameraNo, const size_t& scanImageNo) const = 0;
+  virtual Description scanImage(const size_t &scanPosNo, const size_t &scanNo,
+                                const size_t &scanCameraNo,
+                                const size_t &scanImageNo) const = 0;
 
-    virtual Description scanImage(
-        const std::string& scanImagePath, const size_t& scanImageNo) const = 0;
+  virtual Description scanImage(const std::string &scanImagePath,
+                                const size_t &scanImageNo) const = 0;
 
-    virtual Description hyperspectralCamera(const size_t& position) const
-    {
-        /// TODO: IMPLEMENT ME!!!
-        return Description();
-    }
+  virtual Description hyperspectralCamera(const size_t &position) const {
+    /// TODO: IMPLEMENT ME!!!
+    return Description();
+  }
 
-    virtual Description hyperSpectralTimestamps(const std::string& group) const
-    {
-        Description d;
-        // Timestamps should be in the same group as the
-        d.groupName = group;
-        d.dataSetName = "timestamps";
-        d.metaData = boost::none;
-        return d;
-    }
+  virtual Description hyperSpectralTimestamps(const std::string &group) const {
+    Description d;
+    // Timestamps should be in the same group as the
+    d.groupName = group;
+    d.dataSetName = "timestamps";
+    d.metaData = boost::none;
+    return d;
+  }
 
-    virtual Description hyperSpectralFrames(const std::string& group) const
-    {
-        Description d;
-        // Timestamps should be in the same group as the
-        d.groupName = group;
-        d.dataSetName = "frames";
-        d.metaData = boost::none;
-        return d;
-    }
+  virtual Description hyperSpectralFrames(const std::string &group) const {
+    Description d;
+    // Timestamps should be in the same group as the
+    d.groupName = group;
+    d.dataSetName = "frames";
+    d.metaData = boost::none;
+    return d;
+  }
+
 protected:
-
 };
 
 /// Marker interface for HDF5 schemas
-class HDF5Schema : public ScanProjectSchema
-{
+class HDF5Schema : public ScanProjectSchema {
 public:
-    HDF5Schema() {}
+  HDF5Schema() {}
 };
 
 /// Marker interface for directory schemas
-class DirectorySchema : public ScanProjectSchema
-{
+class DirectorySchema : public ScanProjectSchema {
 public:
-    DirectorySchema() {}
+  DirectorySchema() {}
 };
 
 using ScanProjectSchemaPtr = std::shared_ptr<ScanProjectSchema>;
