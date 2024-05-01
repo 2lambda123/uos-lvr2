@@ -7,9 +7,8 @@ set(HIGHFIVE_VERSION_MAJOR 2)
 set(HIGHFIVE_VERSION_MINOR 0)
 
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/CMake
-  ${PROJECT_SOURCE_DIR}/CMake/portability
-  ${PROJECT_SOURCE_DIR}/CMake/packages
-  ${PROJECT_SOURCE_DIR}/CMake/config)
+     ${PROJECT_SOURCE_DIR}/CMake/portability
+     ${PROJECT_SOURCE_DIR}/CMake/packages ${PROJECT_SOURCE_DIR}/CMake/config)
 
 include(DefineInstallationPaths)
 include(ReleaseDebugAutoFlags)
@@ -23,7 +22,7 @@ option(HIGHFIVE_EXAMPLES "Compile examples" TRUE)
 option(HIGHFIVE_PARALLEL_HDF5 "Enable Parallel HDF5 support" FALSE)
 
 if(HIGHFIVE_PARALLEL_HDF5)
-    set(HDF5_PREFER_PARALLEL TRUE)
+  set(HDF5_PREFER_PARALLEL TRUE)
 endif()
 
 find_package(HDF5 QUIET REQUIRED)
@@ -32,7 +31,7 @@ set(Boost_NO_BOOST_CMAKE TRUE)
 
 if(USE_BOOST)
   find_package(Boost QUIET REQUIRED COMPONENTS system unit_test_framework)
-  add_definitions(-DH5_USE_BOOST )
+  add_definitions(-DH5_USE_BOOST)
   include_directories(SYSTEM ${Boost_INCLUDE_DIR})
 endif()
 
@@ -40,9 +39,8 @@ if(HIGHFIVE_PARALLEL_HDF5)
   find_package(MPI)
 endif()
 
-# if(NOT COMPILER_SUPPORTS_CXX11)
-#     message(FATAL "HighFive version >=2.0 requires c++ standard >= c++11")
-# endif()
+# if(NOT COMPILER_SUPPORTS_CXX11) message(FATAL "HighFive version >=2.0 requires
+# c++ standard >= c++11") endif()
 
 # Absolute include used to avoid interaction with downstream projects including
 # HighFive as a subproject and using the the same filename

@@ -23,7 +23,7 @@ set(LVR2_SOURCES
     io/AsciiIO.cpp
     io/CoordinateTransform.cpp
     io/ObjIO.cpp
-#    io/KinectIO.cpp
+    # io/KinectIO.cpp
     io/AttributeMeshIOBase.cpp
     io/PPMIO.cpp
     io/PLYIO.cpp
@@ -34,7 +34,7 @@ set(LVR2_SOURCES
     io/Progress.cpp
     io/MeshBuffer.cpp
     io/LineReader.cpp
-#    io/KinectGrabber.cpp
+    # io/KinectGrabber.cpp
     io/DatIO.cpp
     io/LasIO.cpp
     io/BaseIO.cpp
@@ -72,166 +72,142 @@ set(LVR2_SOURCES
     registration/GraphSLAM.cpp
     registration/TreeUtils.cpp
     registration/OctreeReduction.cpp
-    registration/RegistrationPipeline.cpp
-)
+    registration/RegistrationPipeline.cpp)
 
-#####################################################################################
+# ##############################################################################
 # Add PCD io if PCL is installed
-#####################################################################################
+# ##############################################################################
 
 if(PCL_FOUND)
-set(LVR2_SOURCES ${LVR2_SOURCES}
-    io/PCDIO.cpp
-    reconstruction/PCLFiltering.cpp)
+  set(LVR2_SOURCES ${LVR2_SOURCES} io/PCDIO.cpp reconstruction/PCLFiltering.cpp)
 endif(PCL_FOUND)
 
 if(embree_FOUND)
-list(APPEND LVR2_SOURCES 
-    algorithm/raycasting/EmbreeRaycaster.cpp
-)
+  list(APPEND LVR2_SOURCES algorithm/raycasting/EmbreeRaycaster.cpp)
 endif(embree_FOUND)
 
 if(WITH_FREENECT AND LIBFREENECT_FOUND)
-set(LVR2_SOURCES ${LVR2_SOURCES} 
-  io/KinectGrabber.cpp 
-  io/KinectIO.cpp)
+  set(LVR2_SOURCES ${LVR2_SOURCES} io/KinectGrabber.cpp io/KinectIO.cpp)
 endif()
 
-#####################################################################################
+# ##############################################################################
 # Draco Geometry Compression
-#####################################################################################
+# ##############################################################################
 
 if(draco_FOUND)
-set(LVR2_SOURCES ${LVR2_SOURCES}
-  io/DracoEncoder.cpp
-  io/DracoDecoder.cpp 
-  io/DrcIO.cpp)
+  set(LVR2_SOURCES ${LVR2_SOURCES} io/DracoEncoder.cpp io/DracoDecoder.cpp
+                   io/DrcIO.cpp)
 endif(draco_FOUND)
 
-#####################################################################################
+# ##############################################################################
 # RiVLib
-#####################################################################################
+# ##############################################################################
 
 if(RiVLib_FOUND)
-  set(LVR2_SOURCES ${LVR2_SOURCES} 
-    io/RxpIO.cpp)
+  set(LVR2_SOURCES ${LVR2_SOURCES} io/RxpIO.cpp)
 endif()
 
-#####################################################################################
+# ##############################################################################
 # OpenCL
-#####################################################################################
+# ##############################################################################
 
 if(OPENCL_FOUND)
-    list(APPEND LVR2_SOURCES
-        reconstruction/opencl/ClSurface.cpp
-        reconstruction/opencl/ClStatisticalOutlierFilter.cpp)
+  list(APPEND LVR2_SOURCES reconstruction/opencl/ClSurface.cpp
+       reconstruction/opencl/ClStatisticalOutlierFilter.cpp)
 endif()
 
-#####################################################################################
+# ##############################################################################
 # Create source groups to structure code in Visual Studio
-#####################################################################################
+# ##############################################################################
 
 if(MSVC)
   include(LVRVSSetup.txt)
 endif()
 
-#####################################################################################
+# ##############################################################################
 # Setup dependencies to external libraries
-#####################################################################################
+# ##############################################################################
 
-set(LVR2_INTERNAL_DEPENDENCIES_STATIC
-    lvr2rply_static
-    lvr2las_static
-    lvr2slam6d_static)
+set(LVR2_INTERNAL_DEPENDENCIES_STATIC lvr2rply_static lvr2las_static
+                                      lvr2slam6d_static)
 
-set(LVR2_INTERNAL_DEPENDENCIES_SHARED
-    lvr2rply
-    lvr2las
-    lvr2slam6d)
+set(LVR2_INTERNAL_DEPENDENCIES_SHARED lvr2rply lvr2las lvr2slam6d)
 
-#####################################################################################
+# ##############################################################################
 # Compile object files for static and dynamic library
-#####################################################################################
+# ##############################################################################
 
 add_library(lvr2core OBJECT ${LVR2_SOURCES})
 
-#####################################################################################
+# ##############################################################################
 # Build static library
-#####################################################################################
+# ##############################################################################
 
 message(STATUS "Building static library")
 add_library(lvr2_static STATIC $<TARGET_OBJECTS:lvr2core>)
-target_link_libraries(
-  lvr2_static 
-  ${LVR2_INTERNAL_DEPENDENCIES_STATIC} 
-  ${LVR2_LIB_DEPENDENCIES})
+target_link_libraries(lvr2_static ${LVR2_INTERNAL_DEPENDENCIES_STATIC}
+                      ${LVR2_LIB_DEPENDENCIES})
 
-
-#####################################################################################
+# ##############################################################################
 # Build shared library
-#####################################################################################
+# ##############################################################################
 
-if( NOT MSVC )
+if(NOT MSVC)
   message(STATUS "Building shared library")
   add_library(lvr2 SHARED $<TARGET_OBJECTS:lvr2core>)
-  target_link_libraries(
-    lvr2 
-    ${LVR2_INTERNAL_DEPENDENCIES_SHARED} 
-    ${LVR2_LIB_DEPENDENCIES})
+  target_link_libraries(lvr2 ${LVR2_INTERNAL_DEPENDENCIES_SHARED}
+                        ${LVR2_LIB_DEPENDENCIES})
 
-install(TARGETS lvr2_static lvr2
-  EXPORT lvr2Targets
-  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-)
-endif( NOT MSVC)
+  install(
+    TARGETS lvr2_static lvr2
+    EXPORT lvr2Targets
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR})
+endif(NOT MSVC)
 
-#####################################################################################
+# ##############################################################################
 # CUDA
-#####################################################################################
+# ##############################################################################
 
 if(CUDA_FOUND)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
 
-    # List of CUDA kernel code sources
-    set(LVR2_CUDA_SRC
-        reconstruction/cuda/CudaSurface.cu
-    )
+  # List of CUDA kernel code sources
+  set(LVR2_CUDA_SRC reconstruction/cuda/CudaSurface.cu)
 
-    if(VTK_FOUND)
-      # Fix broken VTK flags
-      get_directory_property(dir_defs DIRECTORY ${CMAKE_SOURCE_DIR} COMPILE_DEFINITIONS)
-      set(vtk_flags)
-      foreach(it ${dir_defs})
-          if(it MATCHES "vtk*")
-          list(APPEND vtk_flags ${it})
-          endif()
-      endforeach()
+  if(VTK_FOUND)
+    # Fix broken VTK flags
+    get_directory_property(dir_defs DIRECTORY ${CMAKE_SOURCE_DIR}
+                                              COMPILE_DEFINITIONS)
+    set(vtk_flags)
+    foreach(it ${dir_defs})
+      if(it MATCHES "vtk*")
+        list(APPEND vtk_flags ${it})
+      endif()
+    endforeach()
 
-      foreach(d ${vtk_flags})
-          remove_definitions(-D${d})
-      endforeach()
-    endif(VTK_FOUND)
+    foreach(d ${vtk_flags})
+      remove_definitions(-D${d})
+    endforeach()
+  endif(VTK_FOUND)
 
-    message(STATUS "Building static LVR CUDA library")
-    cuda_add_library(lvr2cuda_static STATIC ${LVR2_CUDA_SRC})
-    target_link_libraries(lvr2cuda_static lvr2_static)
+  message(STATUS "Building static LVR CUDA library")
+  cuda_add_library(lvr2cuda_static STATIC ${LVR2_CUDA_SRC})
+  target_link_libraries(lvr2cuda_static lvr2_static)
 
-    # Add dependency to avoid that both targets
-    # are build concurrently in parallel builds
-    add_dependencies(lvr2cuda_static lvr2_static)
+  # Add dependency to avoid that both targets are build concurrently in parallel
+  # builds
+  add_dependencies(lvr2cuda_static lvr2_static)
 
-    message(STATUS "Building shared LVR CUDA library")
-    cuda_add_library(lvr2cuda SHARED ${LVR2_CUDA_CPP_SRC} ${LVR2_CUDA_SRC})
+  message(STATUS "Building shared LVR CUDA library")
+  cuda_add_library(lvr2cuda SHARED ${LVR2_CUDA_CPP_SRC} ${LVR2_CUDA_SRC})
 
-    target_link_libraries(lvr2cuda lvr2)
+  target_link_libraries(lvr2cuda lvr2)
 
-    install(
-        TARGETS lvr2cuda_static lvr2cuda
-        EXPORT lvr2Targets
-        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    )
+  install(
+    TARGETS lvr2cuda_static lvr2cuda
+    EXPORT lvr2Targets
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR})
 
 endif()
-
