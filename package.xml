@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<package format="2">
+<package format="3">
   <name>lvr2</name>
   <version>20.11.3</version>
   <description>
@@ -8,9 +8,9 @@ The Las Vegas Surface Reconstruction Toolkit is an Open Source toolkit to recons
 
   <maintainer email="spuetz@uos.de">Sebastian Pütz</maintainer>
   <maintainer email="twiemann@uos.de">Thomas Wiemann</maintainer>
+  <maintainer email="amock@uos.de">Alexander Mock</maintainer>
 
   <license>BSD-3-Clause</license>
-
 
   <url type="website">https://www.las-vegas.uni-osnabrueck.de/</url>
 
@@ -25,26 +25,21 @@ The Las Vegas Surface Reconstruction Toolkit is an Open Source toolkit to recons
   <author email="dofeldsc@uos.de">Dominik Feldschnieders</author>
   <author email="aloehr@uos.de">Alexander Löhr</author>
 
+  <buildtool_depend>cmake</buildtool_depend>
 
   <depend>libflann-dev</depend>
   <depend>libgsl</depend>
   <depend>libgdal-dev</depend>
   <depend>eigen</depend>
   <depend>ocl-icd-opencl-dev</depend>
-  <depend>libvtk</depend>
-  <depend>libvtk-qt</depend>
   <depend>boost</depend>
   <depend>glut</depend>
   <depend>libxi-dev</depend>
   <depend>libxmu-dev</depend>
   <depend>libhdf5-dev</depend>
-  <depend>qtbase5-dev</depend>
-  <depend>libqt5-opengl-dev</depend>
   <depend>lz4</depend>
   <depend>libopencv-dev</depend>
   <depend>yaml-cpp</depend>
-
-  <buildtool_depend>cmake</buildtool_depend>
 
   <export>
     <build_type>cmake</build_type>

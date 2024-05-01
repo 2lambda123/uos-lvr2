@@ -1,11 +1,24 @@
 cmake_minimum_required(VERSION 3.4)
-project(LAS_VEGAS VERSION 2)
+project(lvr2 VERSION 2)
 
 # OPTIONS
 option(BUILD_EXAMPLES "Build the examples" OFF)
+option(BUILD_VIEWER "Build lvr2_viewer" OFF)
+option(BUILD_TOOLS "Build tools including lvr2_reconstruct" ON)
+option(BUILD_TOOLS_EXPERIMENTAL "Build experimental tools" OFF)
+option(WITH_DRACO "Build libraries with draco enabled" OFF)
+
+
+# DEFAULT RELEASE
+if (NOT EXISTS ${CMAKE_BINARY_DIR}/CMakeCache.txt)
+  if (NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE "Release" CACHE STRING "" FORCE)
+  endif()
+endif()
 
 set_property(GLOBAL PROPERTY USE_FOLDERS On)
 set_property(GLOBAL PROPERTY FIND_LIBRARY_USE_LIB64_PATHS ON)
+
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
@@ -29,9 +42,10 @@ if(embree_FOUND)
   list(APPEND LVR2_DEFINITIONS -DLVR2_USE_EMBREE)
 endif(embree_FOUND)
 
+
 set(CMAKE_MODULE_PATH
-  ${LAS_VEGAS_SOURCE_DIR}/CMakeModules
-  ${LAS_VEGAS_SOURCE_DIR}/ext/kintinuous/cmake/Modules
+  ${PROJECT_SOURCE_DIR}/CMakeModules
+  ${PROJECT_SOURCE_DIR}/ext/kintinuous/cmake/Modules
   ${CMAKE_MODULE_PATH}
 )
 
@@ -54,9 +68,6 @@ if(MSVC)
   list(APPEND LVR2_DEFINITIONS -DNOMINMAX)
 else(MSVC)
   add_compile_options(-fmessage-length=0 -fPIC -Wno-deprecated)
-  # with cmake 3.3
-  add_compile_options($<$<COMPILE_LANGUAGE:CXX>:-std=c++1z>)
-  set(CMAKE_CXX_STANDARD 17)
 endif(MSVC)
 
 ###############################################################################
@@ -86,7 +97,7 @@ endif(GDAL_FOUND)
 #------------------------------------------------------------------------------
 option(WITH_CUDA "Compile with CUDA support" ON)
 if(NOT APPLE AND WITH_CUDA)
-find_package( CUDA 8)
+find_package( CUDA )
 if(CUDA_FOUND)
   message(STATUS "Found CUDA")
     include_directories(${CUDA_INCLUDE_DIRS})
@@ -160,63 +171,75 @@ endif()
 #------------------------------------------------------------------------------
 # Searching for Draco
 #------------------------------------------------------------------------------
+if(WITH_DRACO)
 find_package(Draco)
 if(draco_FOUND)
   message(STATUS "Found Draco")
   include_directories(${draco_INCLUDE_DIRS})
   list(APPEND LVR2_DEFINITIONS -DLVR2_USE_DRACO)
 endif(draco_FOUND)
+else(WITH_DRACO)
+  set(draco_FOUND False)
+endif(WITH_DRACO)
 
 #------------------------------------------------------------------------------
 # Searching for VTK
 #------------------------------------------------------------------------------
-set(VTK_QT_VERSION 5)
-find_package(VTK REQUIRED)
+if(BUILD_VIEWER)
+#------
+# Here I assume VTK is only required for the lvr2_viewer
+# - VTK doesnt occur in the core library
+#------
 
-if(DEFINED VTK_MAJOR_VERSION AND VTK_MAJOR_VERSION VERSION_EQUAL "8")
-  # patched QVTKOpenGL header because of name clash with signals.
-  add_subdirectory(ext/QVTKOpenGLWidget)
-  include_directories(BEFORE ${QVTK_PATCHED_INCLUDE_DIR} )
-  list(APPEND LVR2_INSTALL_INCLUDE_DIRS ${QVTK_PATCHED_INCLUDE_DIR})
+  set(VTK_QT_VERSION 5)
+  find_package(VTK REQUIRED)
 
-  list(APPEND LVR2_DEFINITIONS -DLVR2_USE_VTK8)
-endif()
+  if(DEFINED VTK_MAJOR_VERSION AND VTK_MAJOR_VERSION VERSION_EQUAL "8")
+    # patched QVTKOpenGL header because of name clash with signals.
+    add_subdirectory(ext/QVTKOpenGLWidget)
+    include_directories(BEFORE ${QVTK_PATCHED_INCLUDE_DIR} )
+    list(APPEND LVR2_INSTALL_INCLUDE_DIRS ${QVTK_PATCHED_INCLUDE_DIR})
 
-if(DEFINED VTK_MAJOR_VERSION AND VTK_MAJOR_VERSION VERSION_LESS "6")
-  list(APPEND LVR2_DEFINITIONS -DLVR2_USE_VTK5)
-endif()
-
-if(VTK_MAJOR_VERSION VERSION_EQUAL "7")
-    if(VTK_MINOR_VERSION VERSION_GREATER "0")
-        list(APPEND LVR2_DEFINITIONS -DLVR2_USE_VTK_GE_7_1)
-    endif()
-endif()
-
-if(VTK_MAJOR_VERSION VERSION_GREATER "7")
-  list(APPEND LVR2_DEFINITIONS -DLVR2_USE_VTK_GE_7_1)
-endif()
-
-if(VTK_VERSION VERSION_GREATER "7")
-
-  list(APPEND LVR2_DEFINITIONS -DLVR2_USE_VTK_GE_7_1)
-  set(VTK_COMPONENTS "${VTK_AVAILABLE_COMPONENTS}")
-  set(VTK_HAS_QT OFF)
-  foreach(VTK_COMPONENT ${VTK_COMPONENTS})
-    if("${VTK_COMPONENT}" STREQUAL "GUISupportQt")
-      set(VTK_HAS_QT ON)
-    endif()
-  endforeach()
-
-  message(STATUS "VTK > 7 found")
-  if(VTK_HAS_QT)
-    message(STATUS "Found VTK compoment QVTK")
+    list(APPEND LVR2_DEFINITIONS -DLVR2_USE_VTK8)
   endif()
-endif()
+
+  if(DEFINED VTK_MAJOR_VERSION AND VTK_MAJOR_VERSION VERSION_LESS "6")
+    list(APPEND LVR2_DEFINITIONS -DLVR2_USE_VTK5)
+  endif()
+
+  if(VTK_MAJOR_VERSION VERSION_EQUAL "7")
+      if(VTK_MINOR_VERSION VERSION_GREATER "0")
+          list(APPEND LVR2_DEFINITIONS -DLVR2_USE_VTK_GE_7_1)
+      endif()
+  endif()
+
+  if(VTK_MAJOR_VERSION VERSION_GREATER "7")
+    list(APPEND LVR2_DEFINITIONS -DLVR2_USE_VTK_GE_7_1)
+  endif()
+
+  if(VTK_VERSION VERSION_GREATER "7")
+
+    list(APPEND LVR2_DEFINITIONS -DLVR2_USE_VTK_GE_7_1)
+    set(VTK_COMPONENTS "${VTK_AVAILABLE_COMPONENTS}")
+    set(VTK_HAS_QT OFF)
+    foreach(VTK_COMPONENT ${VTK_COMPONENTS})
+      if("${VTK_COMPONENT}" STREQUAL "GUISupportQt")
+        set(VTK_HAS_QT ON)
+      endif()
+    endforeach()
+
+    message(STATUS "VTK > 7 found")
+    if(VTK_HAS_QT)
+      message(STATUS "Found VTK compoment QVTK")
+    endif()
+  endif()
+
+endif(BUILD_VIEWER)
 
 #------------------------------------------------------------------------------
 # Searching for NABO
 #------------------------------------------------------------------------------
-find_package(Nabo)
+find_package(NABO)
 if(NABO_FOUND)
   include_directories(${NABO_INCLUDE_DIRS})
   list(APPEND LVR2_DEFINITIONS -DLVR2_USE_NABO)
@@ -253,11 +276,14 @@ endif(WITH_PCL)
 
 find_package(CGAL)
 if(CGAL_FOUND)
-  set(_CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS})
-  set(CMAKE_CXX_FLAGS)
-  # CGAL_USE_FILE overrides theses flags...
-  include(${CGAL_USE_FILE})
-  set(CMAKE_CXX_FLAGS "${_CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS}")
+  
+  if(DEFINED CGAL_USE_FILE)
+    # CGAL_USE_FILE overrides theses flags...
+    set(_CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS})
+    set(CMAKE_CXX_FLAGS)
+    include(${CGAL_USE_FILE})
+    set(CMAKE_CXX_FLAGS "${_CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS}")
+  endif()
 
   message(STATUS "Found CGAL")
 endif(CGAL_FOUND)
@@ -426,23 +452,25 @@ option(WITH_KINFU "Compile LVR Kinfu" OFF)
 # compatible to gcc4.8. Older CUDA versions require GCC lower
 # than 4.8
 ###############################################################################
-if(CUDA_FOUND AND "${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU"
-              AND CUDA_VERSION VERSION_GREATER 8
-              AND CUDA_VERSION VERSION_LESS 10)
-    if (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 5 )
-        message(STATUS "******************************************************************")
-        message(STATUS "* Your gcc version needs to be lower than 6 to compile the LVR   *")
-        message(STATUS "* CUDA library and apps with CUDA. Setting CUDA_HOST_COMPILER to *")
-        message(STATUS "* g++-6*. Please ensure that g++ 6 is installed on your system.  *")
-        message(STATUS "******************************************************************")
-        set(CUDA_HOST_COMPILER "g++-6" CACHE STRING "" FORCE)
-        endif()
+if(CUDA_FOUND)
+  include(max_cuda_gcc_version)
+  max_cuda_gcc_version(CUDA_VERSION MAX_CUDA_GCC_VERSION)
+  message(STATUS "Highest supported GCC version for CUDA: ${MAX_CUDA_GCC_VERSION}")
+
+  if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER ${MAX_CUDA_GCC_VERSION})
+    message(STATUS "******************************************************************")
+    message(STATUS "* Your gcc version needs to be lower than or equal ${MAX_CUDA_GCC_VERSION} to compile  *")
+    message(STATUS "* the CUDA library and apps. Setting CUDA_HOST_COMPILER to       *")
+    message(STATUS "* g++-${MAX_CUDA_GCC_VERSION}. Please ensure that g++-${MAX_CUDA_GCC_VERSION} is installed on your system.   *")
+    message(STATUS "******************************************************************")
+    set(CUDA_HOST_COMPILER "g++-${MAX_CUDA_GCC_VERSION}" CACHE STRING "" FORCE)
+  endif()
 endif()
 
 if(CUDA_FOUND AND "${OpenCV_VERSION_PATCH}" VERSION_GREATER "8" AND WITH_KINFU)
     message(STATUS "Building LVR KinFu.")
     add_subdirectory(ext/kintinuous)
-    include_directories(${LAS_VEGAS_SOURCE_DIR}/ext/kintinuous/kfusion/include)
+    include_directories(${PROJECT_SOURCE_DIR}/ext/kintinuous/kfusion/include)
 endif()
 
 
@@ -472,11 +500,8 @@ endif()
 ###############################################################################
 # HEADERS
 ###############################################################################
-
 install(DIRECTORY include/lvr2 DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 list(APPEND LVR2_INSTALL_INCLUDE_DIRS ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR})
-
-
 
 ###############################################################################
 # VTK use file include. Has to be called after all CUDA code
@@ -492,19 +517,20 @@ endif()
 ###############################################################################
 # LVR2 VIEWER CHECKS
 ###############################################################################
-
-find_package(Qt5 COMPONENTS Core Widgets Xml OpenGL)
-if(Qt5_FOUND)
-  message(STATUS "Found QT5")
-  find_package(QVTK)
-  if(QVTK_FOUND)
-    message(STATUS "Found QVTK ${QVTK_INCLUDE_DIR}")
-    include_directories(${QVTK_INCLUDE_DIR})
-    add_subdirectory(src/tools/lvr2_viewer)
-  elseif(DEFINED VTK_VERSION AND VTK_VERSION VERSION_GREATER "7" AND VTK_HAS_QT)
-    add_subdirectory(src/tools/lvr2_viewer)
-  endif(QVTK_FOUND)
-endif(Qt5_FOUND)
+if(BUILD_VIEWER)
+  find_package(Qt5 COMPONENTS Core Widgets Xml OpenGL)
+  if(Qt5_FOUND)
+    message(STATUS "Found QT5")
+    find_package(QVTK)
+    if(QVTK_FOUND)
+      message(STATUS "Found QVTK ${QVTK_INCLUDE_DIR}")
+      include_directories(${QVTK_INCLUDE_DIR})
+      add_subdirectory(src/tools/lvr2_viewer)
+    elseif(DEFINED VTK_VERSION AND VTK_VERSION VERSION_GREATER "7" AND VTK_HAS_QT)
+      add_subdirectory(src/tools/lvr2_viewer)
+    endif(QVTK_FOUND)
+  endif(Qt5_FOUND)
+endif(BUILD_VIEWER)
 
 ###############################################################################
 # LVR2 ASCII VIEWER CHECKS
@@ -584,45 +610,51 @@ add_subdirectory(src/liblvr2)
 # BINARIES
 ###############################################################################
 
-add_subdirectory(src/tools/lvr2_reconstruct)
-add_subdirectory(src/tools/lvr2_dmc_reconstruction)
-add_subdirectory(src/tools/lvr2_gs_reconstruction)
-add_subdirectory(src/tools/lvr2_largescale_reconstruct)
-add_subdirectory(src/tools/lvr2_asciiconverter)
-add_subdirectory(src/tools/lvr2_transform)
-add_subdirectory(src/tools/lvr2_kaboom)
-add_subdirectory(src/tools/lvr2_octree_test)
-add_subdirectory(src/tools/lvr2_image_normals)
-add_subdirectory(src/tools/lvr2_plymerger)
-# add_subdirectory(src/tools/lvr2_hdf5_builder)
-add_subdirectory(src/tools/lvr2_hdf5_builder_2)
-add_subdirectory(src/tools/lvr2_hdf5_mesh_builder)
-add_subdirectory(src/tools/lvr2_slam2hdf5)
-add_subdirectory(src/tools/lvr2_hdf5togeotiff)
-add_subdirectory(src/tools/lvr2_slam6d_merger)
-add_subdirectory(src/tools/lvr2_chunking)
-add_subdirectory(src/tools/lvr2_registration)
-add_subdirectory(src/tools/lvr2_mesh_reducer)
-add_subdirectory(src/tools/lvr2_chunking_server)
-add_subdirectory(src/tools/lvr2_scanproject_parser)
+if(BUILD_TOOLS)
+  add_subdirectory(src/tools/lvr2_reconstruct)
+  add_subdirectory(src/tools/lvr2_mesh_reducer)
+endif(BUILD_TOOLS)
 
-if(CURSES_FOUND AND embree_FOUND)
-    add_subdirectory(src/tools/lvr2_ascii_viewer)
-endif()
+if(BUILD_TOOLS_EXPERIMENTAL)
+  add_subdirectory(src/tools/lvr2_dmc_reconstruction)
+  add_subdirectory(src/tools/lvr2_gs_reconstruction)
+  add_subdirectory(src/tools/lvr2_largescale_reconstruct)
+  add_subdirectory(src/tools/lvr2_asciiconverter)
+  add_subdirectory(src/tools/lvr2_transform)
+  add_subdirectory(src/tools/lvr2_kaboom)
+  add_subdirectory(src/tools/lvr2_octree_test)
+  add_subdirectory(src/tools/lvr2_image_normals)
+  add_subdirectory(src/tools/lvr2_plymerger)
+  # add_subdirectory(src/tools/lvr2_hdf5_builder)
+  add_subdirectory(src/tools/lvr2_hdf5_builder_2)
+  add_subdirectory(src/tools/lvr2_hdf5_mesh_builder)
+  add_subdirectory(src/tools/lvr2_slam2hdf5)
+  add_subdirectory(src/tools/lvr2_hdf5togeotiff)
+  add_subdirectory(src/tools/lvr2_slam6d_merger)
+  add_subdirectory(src/tools/lvr2_chunking)
+  add_subdirectory(src/tools/lvr2_registration)
+  add_subdirectory(src/tools/lvr2_chunking_server)
+  add_subdirectory(src/tools/lvr2_scanproject_parser)
 
-if (RiVLib_FOUND)
-    #add_subdirectory(src/tools/lvr2_riegl_project_converter)
-endif()
+  if(CURSES_FOUND AND embree_FOUND)
+      add_subdirectory(src/tools/lvr2_ascii_viewer)
+  endif()
 
-if(CUDA_FOUND)
-#    cuda_include_directories(ext/CTPL)
-    add_subdirectory(src/tools/lvr2_cuda_normals)
-endif()
+  if (RiVLib_FOUND)
+      #add_subdirectory(src/tools/lvr2_riegl_project_converter)
+  endif()
 
-if(OPENCL_FOUND)
-    add_subdirectory(src/tools/lvr2_cl_normals)
-    add_subdirectory(src/tools/lvr2_cl_sor)
-endif()
+  if(CUDA_FOUND)
+  #    cuda_include_directories(ext/CTPL)
+      add_subdirectory(src/tools/lvr2_cuda_normals)
+  endif()
+
+  if(OPENCL_FOUND)
+      add_subdirectory(src/tools/lvr2_cl_normals)
+      add_subdirectory(src/tools/lvr2_cl_sor)
+  endif()
+
+endif(BUILD_TOOLS_EXPERIMENTAL)
 
 if(BUILD_EXAMPLES)
     add_subdirectory(examples)
@@ -635,7 +667,7 @@ endif()
 
 include(CMakePackageConfigHelpers)
 set(INCLUDE_INSTALL_DIR include/)
-set(LIB_INSTALL_DIR lib/)
+set(LIB_INSTALL_DIR lib)
 set(SYSCONFIG_INSTALL_DIR etc/lvr2/)
 
 install(EXPORT lvr2Targets
@@ -664,7 +696,7 @@ install(FILES
     CMakeModules/FindEigen3.cmake
     CMakeModules/FindFLANN.cmake
     CMakeModules/FindLz4.cmake
-    CMakeModules/FindNabo.cmake
+    CMakeModules/FindNABO.cmake
     CMakeModules/FindOpenNI.cmake
     CMakeModules/FindOpenNI2.cmake
     CMakeModules/FindQVTK.cmake
