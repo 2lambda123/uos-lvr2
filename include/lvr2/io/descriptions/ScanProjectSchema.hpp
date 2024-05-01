@@ -22,8 +22,8 @@ struct Description
 };
 
 std::pair<std::string, std::string> getNames(
-    const std::string& defaultGroup, 
-    const std::string& defaultContainer, 
+    const std::string& defaultGroup,
+    const std::string& defaultContainer,
     const Description& d);
 
 class ScanProjectSchema
@@ -37,10 +37,10 @@ public:
     virtual Description position(const size_t& scanPosNo) const = 0;
     virtual Description scan(const size_t& scanPosNo, const size_t& scanNo) const = 0;
     virtual Description scan(const std::string& scanPositionPath, const size_t& scanNo) const = 0;
-    
+
     virtual Description scanCamera(const size_t& scanPositionNo, const size_t& camNo) const = 0;
     virtual Description scanCamera(const std::string& scanPositionPath, const size_t& camNo) const = 0;
- 
+
     virtual Description scanImage(
         const size_t& scanPosNo, const size_t& scanNo,
         const size_t& scanCameraNo, const size_t& scanImageNo) const = 0;
@@ -57,28 +57,28 @@ public:
     virtual Description hyperSpectralTimestamps(const std::string& group) const
     {
         Description d;
-        // Timestamps should be in the same group as the 
+        // Timestamps should be in the same group as the
         d.groupName = group;
         d.dataSetName = "timestamps";
-        d.metaData = boost::none; 
+        d.metaData = boost::none;
         return d;
     }
 
     virtual Description hyperSpectralFrames(const std::string& group) const
     {
         Description d;
-        // Timestamps should be in the same group as the 
+        // Timestamps should be in the same group as the
         d.groupName = group;
         d.dataSetName = "frames";
-        d.metaData = boost::none; 
+        d.metaData = boost::none;
         return d;
     }
 protected:
-    
+
 };
 
 /// Marker interface for HDF5 schemas
-class HDF5Schema : public ScanProjectSchema 
+class HDF5Schema : public ScanProjectSchema
 {
 public:
     HDF5Schema() {}
